@@ -85,21 +85,16 @@ function Dashboard() {
       }
 
       const favoriteRows = data.favoriteTeams ?? []
-      const favoriteTeamIds = favoriteRows.map((favoriteTeam) => favoriteTeam.team_id)
       const profile = (data.profiles ?? []).find((profileItem) => profileItem.id === currentUser.id)
       const selectedFavoriteTeams = favoriteRows
         .map((favoriteTeam) => favoriteTeam.teams)
         .filter(Boolean)
         .slice(0, 4)
       const allMatches = data.matches ?? []
+      const now = new Date()
 
       const scheduledMatches = allMatches
-        .filter(
-          (match) =>
-            match.status === 'scheduled' &&
-            (favoriteTeamIds.includes(match.home_team_id) ||
-              favoriteTeamIds.includes(match.away_team_id)),
-        )
+        .filter((match) => match.status === 'scheduled' && new Date(match.match_date) >= now)
         .sort((firstMatch, secondMatch) => new Date(firstMatch.match_date) - new Date(secondMatch.match_date))
         .slice(0, 3)
 
@@ -323,7 +318,7 @@ function Dashboard() {
                   ))
                 ) : (
                   <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-                    No scheduled matches for favorite teams yet.
+                    No upcoming scheduled matches yet.
                   </p>
                 )}
               </div>

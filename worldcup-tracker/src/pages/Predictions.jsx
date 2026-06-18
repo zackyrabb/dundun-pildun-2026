@@ -76,6 +76,14 @@ function Predictions() {
       <PageHeader
         title="My Predictions"
         description="Score predictions you have saved for Dundun Pildun 2026 matches."
+        action={
+          <Link
+            to="/matches"
+            className="inline-flex w-full justify-center rounded-3xl bg-blue-600 px-5 py-5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 sm:w-64 lg:w-[calc((100%-3rem)/4)]"
+          >
+            Let&apos;s Predict
+          </Link>
+        }
       />
 
       {message ? (
