@@ -36,7 +36,7 @@ export default function Login() {
     <section className="mx-auto max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="relative mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-blue-700 to-green-500">
           <img
-            src="/image/world-cup-2026-banner.jpg"
+            src="/images/world-cup-2026-banner.jpg"
             alt="World Cup 2026 Banner"
             className="h-44 w-full rounded-3xl object-cover"
             onError={(event) => {

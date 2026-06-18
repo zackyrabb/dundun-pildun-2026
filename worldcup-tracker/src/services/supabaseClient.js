@@ -10,5 +10,5 @@ export const supabase = isSupabaseConfigured
   : null;
 
 export const supabaseConfigError = {
-  message: "VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY belum diisi."
+  message: "VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are not configured."
 };
