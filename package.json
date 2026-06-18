@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "dev": "npm --prefix worldcup-tracker run dev --",
+    "build": "npm --prefix worldcup-tracker run build",
+    "lint": "npm --prefix worldcup-tracker run lint",
+    "preview": "npm --prefix worldcup-tracker run preview --"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.2",
+    "@tailwindcss/vite": "^4.3.1",
+    "lucide-react": "^1.21.0",
+    "tailwindcss": "^4.3.1"
+  }
+}
