@@ -1,45 +1,47 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { importWorldCup2026Fixtures } from "../../services/adminImportService";
+import { syncWorldCupData } from "../../services/adminSyncService";
 
 export default function AdminDashboard() {
-  const [importing, setImporting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
 
-  async function handleImportFixtures() {
+  async function handleSyncWorldCupData() {
     const confirmed = window.confirm(
-      "Import World Cup 2026 fixtures from OpenFootball now?"
+      "Sync World Cup 2026 fixtures and scores from football-data.org now?"
     );
 
-    if (!confirmed || importing) {
+    if (!confirmed || syncing) {
       return;
     }
 
-    setImporting(true);
+    setSyncing(true);
     setMessage("");
     setMessageType("success");
 
-    const { data, error } = await importWorldCup2026Fixtures();
+    const { data, error } = await syncWorldCupData();
 
-    setImporting(false);
+    setSyncing(false);
 
     if (error) {
       setMessageType("error");
-      setMessage(error.message);
+      setMessage(error.message || data?.error || "Sync failed.");
       return;
     }
 
     if (data?.ok === false) {
       setMessageType("error");
-      setMessage(data.error || "Import failed.");
+      setMessage(data.error || "Sync failed.");
       return;
     }
 
     setMessageType("success");
     setMessage(
-      `Import completed. Teams: ${data?.teamsUpserted ?? 0}, Matches: ${
-        data?.matchesUpserted ?? 0
+      `Sync completed. Matches: ${data?.matchesUpserted ?? 0}, Teams: ${
+        data?.teamsUpserted ?? 0
+      }, Skipped: ${
+        data?.skippedMatches ?? 0
       }`
     );
   }
@@ -62,20 +64,20 @@ export default function AdminDashboard() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-xl font-black text-slate-900">
-                Import Fixtures 2026
+                Sync World Cup Data
               </h2>
               <p className="mt-1 text-sm text-slate-600">
-                Manually sync World Cup 2026 teams and matches from OpenFootball.
+                Manually sync World Cup 2026 fixtures and scores from football-data.org.
               </p>
             </div>
 
             <button
               type="button"
-              onClick={handleImportFixtures}
-              disabled={importing}
+              onClick={handleSyncWorldCupData}
+              disabled={syncing}
               className="rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500"
             >
-              {importing ? "Importing..." : "Import Fixtures 2026"}
+              {syncing ? "Syncing..." : "Sync World Cup Data"}
             </button>
           </div>
 
