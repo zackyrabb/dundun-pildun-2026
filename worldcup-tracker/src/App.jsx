@@ -12,6 +12,7 @@ import CompleteProfile from "./pages/CompleteProfile";
 import FavoriteTeams from "./pages/FavoriteTeams";
 import Dashboard from "./pages/Dashboard";
 import Teams from "./pages/Teams";
+import TeamDetail from "./pages/TeamDetail";
 import Matches from "./pages/Matches";
 import MatchDetail from "./pages/MatchDetail";
 import Predictions from "./pages/Predictions";
@@ -71,6 +72,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Teams />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/teams/:id"
+            element={
+              <ProtectedRoute>
+                <TeamDetail />
               </ProtectedRoute>
             }
           />

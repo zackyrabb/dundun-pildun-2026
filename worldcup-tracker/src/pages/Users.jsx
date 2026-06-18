@@ -63,7 +63,7 @@ function Users() {
   return (
     <>
       <PageHeader
-        title="Users"
+        title="Barudak"
         description="Registered users, favorite teams, and prediction statistics from Supabase."
       />
 

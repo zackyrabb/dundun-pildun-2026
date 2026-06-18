@@ -131,22 +131,14 @@ function Dashboard() {
 
   const dashboardHero = (
     <section className="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-700 via-blue-600 to-green-500 p-6 text-white shadow-sm sm:p-8">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-100">DUNDUN PILDUN 2026</p>
-          <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
-            Welcome back, {welcomeName}
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-blue-50 sm:text-base">
-            Track your favorite teams, submit score predictions, and climb the leaderboard.
-          </p>
-        </div>
-        <Link
-          to="/favorite-teams"
-          className="inline-flex justify-center rounded-2xl bg-white px-5 py-3 font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50"
-        >
-          Edit Favorites
-        </Link>
+      <div>
+        <p className="text-sm font-semibold uppercase tracking-wide text-blue-100">DUNDUN PILDUN 2026</p>
+        <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+          Welcome back, {welcomeName}
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-blue-50 sm:text-base">
+          Track your favorite teams, submit score predictions, and climb the leaderboard.
+        </p>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
@@ -217,20 +209,21 @@ function Dashboard() {
           </div>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {favoriteTeams.map((team) => (
-              <article
+              <Link
                 key={team.id}
-                className="flex min-h-16 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
+                to={`/teams/${team.id}`}
+                className="flex min-h-16 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md"
               >
                 <span className="shrink-0 text-2xl">{team.flag}</span>
                 <h3 className="truncate text-sm font-bold text-slate-950 sm:text-base">{team.name}</h3>
-              </article>
+              </Link>
             ))}
           </div>
         </section>
 
         <section className="mt-8 grid items-stretch gap-6 lg:grid-cols-[0.95fr_1.35fr]">
           <section className="h-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-950">TOP 5 PREDICTORS</h2>
+            <h2 className="text-xl font-bold text-slate-950">Top 5 Dukun</h2>
             <div className="mt-4 flex h-[calc(100%-2rem)] flex-col gap-3">
               {predictionRanking.map((user, index) => {
                 const profile = user.profile ?? {}

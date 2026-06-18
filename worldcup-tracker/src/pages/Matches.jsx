@@ -8,7 +8,7 @@ import { canPredictMatch } from "../utils/matchStatusUtils";
 export default function Matches() {
   const [matches, setMatches] = useState([]);
   const [favoriteTeamIds, setFavoriteTeamIds] = useState([]);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("scheduled");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
@@ -102,10 +102,10 @@ export default function Matches() {
 
         <div className="mb-6 flex flex-wrap gap-3">
           {[
-            ["all", "All"],
             ["scheduled", "Upcoming"],
             ["finished", "Finished"],
-            ["favorites", "My Favorite Teams"],
+            ["favorites", "My Favorites"],
+            ["all", "All"],
           ].map(([value, label]) => (
             <button
               key={value}
