@@ -148,7 +148,7 @@ export default function CompleteProfile() {
               className="w-full rounded-xl border border-slate-300 px-4 py-3"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              placeholder="example: budi"
+              placeholder="example: dinur67"
             />
           </div>
 
