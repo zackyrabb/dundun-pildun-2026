@@ -42,6 +42,8 @@ export default function AdminDashboard() {
         data?.teamsUpserted ?? 0
       }, Skipped: ${
         data?.skippedMatches ?? 0
+      }, Manual protected: ${
+        data?.skippedManualOverride ?? 0
       }`
     );
   }

@@ -202,7 +202,10 @@ export default function AdminMatchForm() {
     };
 
     const { error } = isEditMode
-      ? await updateMatch(id, payload)
+      ? await updateMatch(id, {
+          ...payload,
+          is_manual_override: true,
+        })
       : await createMatch(payload);
 
     setSaving(false);
