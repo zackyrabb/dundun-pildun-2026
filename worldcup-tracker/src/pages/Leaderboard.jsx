@@ -6,9 +6,9 @@ import { getAllProfiles } from '../services/profileService'
 import { calculatePredictionPoints } from '../utils/calculatePredictionPoints'
 
 const pointRules = [
-  { label: 'Exact score', points: 5 },
-  { label: 'Correct result', points: 3 },
-  { label: 'One score correct', points: 2 },
+  { label: 'Exact score', points: 3 },
+  { label: 'Correct result', points: 2 },
+  { label: 'One score correct', points: 1 },
   { label: 'All wrong', points: 0 },
 ]
 
