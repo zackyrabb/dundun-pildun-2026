@@ -1,6 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getMatches } from "../../services/matchService";
+
+const tabs = [
+  { value: "upcoming", label: "Upcoming", emptyText: "No upcoming matches found." },
+  { value: "finished", label: "Finished", emptyText: "No finished matches found." },
+  { value: "all", label: "All", emptyText: "No matches found." },
+];
+
+const upcomingStatuses = new Set(["scheduled", "timed", "live"]);
 
 const formatDate = (date) =>
   new Intl.DateTimeFormat("id-ID", {
@@ -21,6 +29,7 @@ const getTeamLabel = (team) => {
 
 export default function AdminMatches() {
   const [matches, setMatches] = useState([]);
+  const [activeTab, setActiveTab] = useState("upcoming");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
@@ -43,6 +52,32 @@ export default function AdminMatches() {
 
     loadMatches();
   }, []);
+
+  const filteredMatches = useMemo(() => {
+    const now = new Date();
+    const sortedMatches = [...matches];
+
+    if (activeTab === "finished") {
+      return sortedMatches
+        .filter((match) => match.status === "finished")
+        .sort((firstMatch, secondMatch) => new Date(secondMatch.match_date) - new Date(firstMatch.match_date));
+    }
+
+    if (activeTab === "all") {
+      return sortedMatches.sort(
+        (firstMatch, secondMatch) => new Date(firstMatch.match_date) - new Date(secondMatch.match_date)
+      );
+    }
+
+    return sortedMatches
+      .filter((match) => {
+        const matchDate = new Date(match.match_date);
+        return upcomingStatuses.has(match.status) || matchDate > now;
+      })
+      .sort((firstMatch, secondMatch) => new Date(firstMatch.match_date) - new Date(secondMatch.match_date));
+  }, [activeTab, matches]);
+
+  const emptyText = tabs.find((tab) => tab.value === activeTab)?.emptyText ?? "No matches found.";
 
   if (loading) {
     return (
@@ -81,7 +116,26 @@ export default function AdminMatches() {
         </div>
       ) : null}
 
-      <div className="hidden overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm lg:block">
+      <div className="mb-6 flex flex-wrap gap-3">
+        {tabs.map((tab) => (
+          <button
+            key={tab.value}
+            type="button"
+            onClick={() => setActiveTab(tab.value)}
+            className={[
+              "rounded-full px-4 py-2 text-sm font-semibold transition",
+              activeTab === tab.value
+                ? "bg-blue-600 text-white shadow-sm"
+                : "border border-slate-200 bg-white text-slate-600 hover:bg-blue-50 hover:text-blue-700",
+            ].join(" ")}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {filteredMatches.length > 0 ? (
+        <div className="hidden overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm lg:block">
         <table className="w-full text-left">
           <thead className="bg-slate-50 text-sm uppercase tracking-wide text-slate-500">
             <tr>
@@ -95,7 +149,7 @@ export default function AdminMatches() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {matches.map((match) => (
+            {filteredMatches.map((match) => (
               <tr key={match.id} className="transition hover:bg-blue-50/60">
                 <td className="px-5 py-4 font-semibold text-slate-900">
                   {getTeamLabel(match.home_team)}
@@ -138,10 +192,12 @@ export default function AdminMatches() {
             ))}
           </tbody>
         </table>
-      </div>
+        </div>
+      ) : null}
 
-      <div className="grid gap-4 lg:hidden">
-        {matches.map((match) => (
+      {filteredMatches.length > 0 ? (
+        <div className="grid gap-4 lg:hidden">
+        {filteredMatches.map((match) => (
           <article
             key={match.id}
             className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
@@ -206,15 +262,18 @@ export default function AdminMatches() {
             </div>
           </article>
         ))}
-      </div>
+        </div>
+      ) : null}
 
-      {matches.length === 0 ? (
+      {filteredMatches.length === 0 ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
           <h2 className="text-xl font-bold text-slate-950">
-            No matches yet
+            {emptyText}
           </h2>
           <p className="mt-2 text-slate-600">
-            Add the first match to start managing the schedule.
+            {activeTab === "all"
+              ? "Add the first match to start managing the schedule."
+              : "Try another tab or add a new match."}
           </p>
         </div>
       ) : null}

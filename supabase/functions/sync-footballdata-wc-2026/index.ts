@@ -285,6 +285,7 @@ Deno.serve(async (req: Request) => {
     let finishedMatches = 0;
     let scheduledMatches = 0;
     let liveMatches = 0;
+    let skippedManualOverride = 0;
 
     for (const match of validMatches) {
       const groupName = match.group ? toReadableLabel(match.group) : null;
@@ -325,11 +326,26 @@ Deno.serve(async (req: Request) => {
       if (status === "scheduled") scheduledMatches += 1;
       if (status === "live") liveMatches += 1;
 
+      const matchExternalId = `football-data-match-${match.id}`;
+      const { data: existingMatch, error: existingMatchError } = await supabase
+        .from("matches")
+        .select("id, is_manual_override")
+        .eq("external_id", matchExternalId)
+        .maybeSingle();
+
+      if (existingMatchError) throw existingMatchError;
+
+      if (existingMatch?.is_manual_override) {
+        console.log("Skipping manual override match", matchExternalId);
+        skippedManualOverride += 1;
+        continue;
+      }
+
       const { error: matchError } = await supabase
         .from("matches")
         .upsert(
           {
-            external_id: `football-data-match-${match.id}`,
+            external_id: matchExternalId,
             home_team_id: homeTeamId,
             away_team_id: awayTeamId,
             match_date: match.utcDate,
@@ -337,6 +353,7 @@ Deno.serve(async (req: Request) => {
             status,
             home_score: homeScore,
             away_score: awayScore,
+            is_manual_override: false,
             updated_at: new Date().toISOString(),
           },
           { onConflict: "external_id" },
@@ -354,6 +371,7 @@ Deno.serve(async (req: Request) => {
         resultCount: json.resultSet?.count ?? matches.length,
         validMatches: validMatches.length,
         skippedMatches,
+        skippedManualOverride,
         teamsUpserted,
         matchesUpserted,
         finishedMatches,
