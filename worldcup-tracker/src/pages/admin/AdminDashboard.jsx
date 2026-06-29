@@ -38,10 +38,10 @@ export default function AdminDashboard() {
 
     setMessageType("success");
     setMessage(
-      `Sync completed. Matches: ${data?.matchesUpserted ?? 0}, Teams: ${
-        data?.teamsUpserted ?? 0
-      }, Skipped: ${
+      `Sync completed. Matches: ${data?.matchesUpserted ?? 0}, Skipped: ${
         data?.skippedMatches ?? 0
+      }, Missing teams: ${
+        data?.skippedMissingTeams ?? 0
       }, Manual protected: ${
         data?.skippedManualOverride ?? 0
       }`

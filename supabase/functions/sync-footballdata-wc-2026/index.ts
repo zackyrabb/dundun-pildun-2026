@@ -34,55 +34,11 @@ type FootballDataMatch = {
   } | null;
 };
 
-const FLAG_BY_CODE: Record<string, string> = {
-  ALG: "🇩🇿",
-  ARG: "🇦🇷",
-  AUS: "🇦🇺",
-  AUT: "🇦🇹",
-  BEL: "🇧🇪",
-  BIH: "🇧🇦",
-  BRA: "🇧🇷",
-  CAN: "🇨🇦",
-  CIV: "🇨🇮",
-  COD: "🇨🇩",
-  COL: "🇨🇴",
-  CPV: "🇨🇻",
-  CRO: "🇭🇷",
-  CUW: "🇨🇼",
-  CZE: "🇨🇿",
-  ECU: "🇪🇨",
-  EGY: "🇪🇬",
-  ENG: "🏴",
-  ESP: "🇪🇸",
-  FRA: "🇫🇷",
-  GER: "🇩🇪",
-  GHA: "🇬🇭",
-  HAI: "🇭🇹",
-  IRN: "🇮🇷",
-  IRQ: "🇮🇶",
-  JOR: "🇯🇴",
-  JPN: "🇯🇵",
-  KOR: "🇰🇷",
-  KSA: "🇸🇦",
-  MAR: "🇲🇦",
-  MEX: "🇲🇽",
-  NED: "🇳🇱",
-  NOR: "🇳🇴",
-  NZL: "🇳🇿",
-  PAN: "🇵🇦",
-  PAR: "🇵🇾",
-  POR: "🇵🇹",
-  QAT: "🇶🇦",
-  RSA: "🇿🇦",
-  SCO: "🏴",
-  SEN: "🇸🇳",
-  SUI: "🇨🇭",
-  SWE: "🇸🇪",
-  TUN: "🇹🇳",
-  TUR: "🇹🇷",
-  URU: "🇺🇾",
-  USA: "🇺🇸",
-  UZB: "🇺🇿",
+type LocalTeam = {
+  id: string | number;
+  external_id: string | null;
+  code: string | null;
+  name: string | null;
 };
 
 function normalizeCode(value: string | null | undefined) {
@@ -90,10 +46,16 @@ function normalizeCode(value: string | null | undefined) {
   return String(value).trim().toUpperCase();
 }
 
-function getTeamCode(team: FootballDataTeam) {
-  const tla = normalizeCode(team.tla);
-  if (tla) return tla;
-  return normalizeCode(team.name?.slice(0, 3));
+function normalizeName(value: string | null | undefined) {
+  if (!value) return "";
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function toReadableLabel(value: string | null | undefined) {
@@ -149,84 +111,42 @@ function isValidTeam(team: FootballDataTeam | null | undefined) {
   return Boolean(team?.id && team?.name);
 }
 
-async function upsertTeam(supabase: any, team: FootballDataTeam, groupName: string | null) {
-  const externalId = `football-data-team-${team.id}`;
-  const code = getTeamCode(team);
-  const payload = {
-    external_id: externalId,
-    name: team.name,
-    code,
-    flag: FLAG_BY_CODE[code] ?? "🏳️",
-    group_name: groupName,
-  };
+function buildLocalTeamLookups(teams: LocalTeam[]) {
+  const byExternalId = new Map<string, LocalTeam>();
+  const byCode = new Map<string, LocalTeam>();
+  const byName = new Map<string, LocalTeam>();
 
-  const { data: existingByExternalId, error: existingByExternalIdError } = await supabase
-    .from("teams")
-    .select("id")
-    .eq("external_id", externalId)
-    .maybeSingle();
-
-  if (existingByExternalIdError) throw existingByExternalIdError;
-
-  const { data: existingByCode, error: existingByCodeError } = await supabase
-    .from("teams")
-    .select("id")
-    .eq("code", code)
-    .maybeSingle();
-
-  if (existingByCodeError) throw existingByCodeError;
-
-  if (existingByExternalId && existingByCode && existingByExternalId.id !== existingByCode.id) {
-    const { error: homeTeamMergeError } = await supabase
-      .from("matches")
-      .update({ home_team_id: existingByCode.id })
-      .eq("home_team_id", existingByExternalId.id);
-
-    if (homeTeamMergeError) throw homeTeamMergeError;
-
-    const { error: awayTeamMergeError } = await supabase
-      .from("matches")
-      .update({ away_team_id: existingByCode.id })
-      .eq("away_team_id", existingByExternalId.id);
-
-    if (awayTeamMergeError) throw awayTeamMergeError;
-
-    const { error: favoriteTeamMergeError } = await supabase
-      .from("user_favorite_teams")
-      .update({ team_id: existingByCode.id })
-      .eq("team_id", existingByExternalId.id);
-
-    if (favoriteTeamMergeError && favoriteTeamMergeError.code !== "23505") {
-      throw favoriteTeamMergeError;
+  for (const team of teams) {
+    if (team.external_id) {
+      byExternalId.set(team.external_id, team);
     }
 
-    if (favoriteTeamMergeError?.code === "23505") {
-      const { error: favoriteTeamDeleteError } = await supabase
-        .from("user_favorite_teams")
-        .delete()
-        .eq("team_id", existingByExternalId.id);
-
-      if (favoriteTeamDeleteError) throw favoriteTeamDeleteError;
+    const code = normalizeCode(team.code);
+    if (code && !byCode.has(code)) {
+      byCode.set(code, team);
     }
 
-    const { error: duplicateTeamDeleteError } = await supabase
-      .from("teams")
-      .delete()
-      .eq("id", existingByExternalId.id);
-
-    if (duplicateTeamDeleteError) throw duplicateTeamDeleteError;
+    const name = normalizeName(team.name);
+    if (name && !byName.has(name)) {
+      byName.set(name, team);
+    }
   }
 
-  const teamQuery = existingByCode
-    ? supabase
-        .from("teams")
-        .update(payload)
-        .eq("id", existingByCode.id)
-    : supabase
-        .from("teams")
-        .upsert(payload, { onConflict: "external_id" });
+  return { byExternalId, byCode, byName };
+}
 
-  return teamQuery.select("id").single();
+function resolveLocalTeam(
+  team: FootballDataTeam,
+  lookups: ReturnType<typeof buildLocalTeamLookups>,
+) {
+  const externalId = `football-data-team-${team.id}`;
+  const code = normalizeCode(team.tla);
+  const name = normalizeName(team.name);
+
+  return lookups.byExternalId.get(externalId) ??
+    (code ? lookups.byCode.get(code) : undefined) ??
+    (name ? lookups.byName.get(name) : undefined) ??
+    null;
 }
 
 Deno.serve(async (req: Request) => {
@@ -274,50 +194,39 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
-    const teamExternalIdToLocalId = new Map<string, string>();
+    const { data: localTeams, error: localTeamsError } = await supabase
+      .from("teams")
+      .select("id, external_id, code, name");
+
+    if (localTeamsError) throw localTeamsError;
+
+    const teams = (localTeams ?? []) as LocalTeam[];
+    const teamLookups = buildLocalTeamLookups(teams);
     const validMatches = matches.filter((match) => {
       return isValidTeam(match.homeTeam) && isValidTeam(match.awayTeam);
     });
     const skippedMatches = matches.length - validMatches.length;
 
-    let teamsUpserted = 0;
     let matchesUpserted = 0;
     let finishedMatches = 0;
     let scheduledMatches = 0;
     let liveMatches = 0;
+    let skippedMissingTeams = 0;
     let skippedManualOverride = 0;
 
     for (const match of validMatches) {
-      const groupName = match.group ? toReadableLabel(match.group) : null;
-      const teams = [match.homeTeam, match.awayTeam] as FootballDataTeam[];
+      const homeTeam = resolveLocalTeam(match.homeTeam as FootballDataTeam, teamLookups);
+      const awayTeam = resolveLocalTeam(match.awayTeam as FootballDataTeam, teamLookups);
 
-      for (const team of teams) {
-        const externalId = `football-data-team-${team.id}`;
-
-        if (teamExternalIdToLocalId.has(externalId)) continue;
-
-        const { data: teamData, error: teamError } = await upsertTeam(
-          supabase,
-          team,
-          groupName,
-        );
-
-        if (teamError) throw teamError;
-
-        teamExternalIdToLocalId.set(externalId, teamData.id);
-        teamsUpserted += 1;
+      if (!homeTeam || !awayTeam) {
+        console.log("Skipping match because local team is missing", {
+          matchId: match.id,
+          homeTeam: match.homeTeam?.name,
+          awayTeam: match.awayTeam?.name,
+        });
+        skippedMissingTeams += 1;
+        continue;
       }
-    }
-
-    for (const match of validMatches) {
-      const homeTeamId = teamExternalIdToLocalId.get(
-        `football-data-team-${match.homeTeam?.id}`,
-      );
-      const awayTeamId = teamExternalIdToLocalId.get(
-        `football-data-team-${match.awayTeam?.id}`,
-      );
-
-      if (!homeTeamId || !awayTeamId) continue;
 
       const status = getStatus(match);
       const { homeScore, awayScore } = getScores(match);
@@ -346,8 +255,8 @@ Deno.serve(async (req: Request) => {
         .upsert(
           {
             external_id: matchExternalId,
-            home_team_id: homeTeamId,
-            away_team_id: awayTeamId,
+            home_team_id: homeTeam.id,
+            away_team_id: awayTeam.id,
             match_date: match.utcDate,
             stage: getStage(match),
             status,
@@ -371,8 +280,10 @@ Deno.serve(async (req: Request) => {
         resultCount: json.resultSet?.count ?? matches.length,
         validMatches: validMatches.length,
         skippedMatches,
+        skippedMissingTeams,
         skippedManualOverride,
-        teamsUpserted,
+        teamsRead: teams.length,
+        teamsModified: 0,
         matchesUpserted,
         finishedMatches,
         scheduledMatches,
